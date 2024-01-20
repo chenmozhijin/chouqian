@@ -115,8 +115,6 @@ class Data:
         """获取记录"""
         records = {}
         c = self.conn.cursor()
-        if end_time:
-            end_time += 86400
         # 使用SELECT语句查询指定列表在指定时间范围内每个item的个数
         if start_time and end_time:
             c.execute("SELECT item, COUNT(*) FROM records WHERE list_name=? AND time>=? AND time<=? GROUP BY item", (list_name, start_time, end_time))

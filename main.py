@@ -264,6 +264,10 @@ class MainWindow(FluentWindow):
         local_timezone_offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
         start_time = qdate_to_unix_timestamp(self.statistics.CalendarPicker.getDate())
         end_time = qdate_to_unix_timestamp(self.statistics.CalendarPicker_2.getDate())
+        if start_time != 0:
+            start_time += local_timezone_offset
+        if end_time != 0:
+            end_time = end_time + local_timezone_offset + 86400
         statistics_data = data.read_records(self.statistics.ComboBox.currentText(), start_time, end_time)
         statistics_data = sorted(statistics_data.items(), key=lambda x: x[1]['count'], reverse=True)
         table = self.statistics.TableWidget
