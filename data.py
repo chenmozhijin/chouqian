@@ -126,7 +126,12 @@ class Data:
             c.execute("SELECT item, COUNT(*) FROM records WHERE list_name=? GROUP BY item", (list_name,))
         for record in c.fetchall():
             records[record[0]] = {"count": record[1]}
-        list_data = self.read_list(list_name)
+        if list_name == "小组抽签":
+            list_data = []
+            for i in range(1, self.cfg["groups_count"] + 1):
+                list_data.append("第" + str(i) + "组")
+        else:
+            list_data = self.read_list(list_name)
         for item in list_data:
             if item not in records:
                 records[item] = {"count": 0}
