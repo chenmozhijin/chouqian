@@ -1,0 +1,13 @@
+{
+    "version": 1,
+    "settings": {
+            "draw_animation": true,
+            "reduce_duplication": true,
+            "groups_count": 7,
+            "default_list": "名字"
+        },
+    "lists": {
+        "名字": ["张三", "李四", "王五", "赵六"],
+        "1-9": ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    }
+}

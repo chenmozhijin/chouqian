@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/chouqian">
+        <file>icon/logo.png</file>
+
+        <file>icon/person_black.svg</file>
+        <file>icon/person_white.svg</file>
+    </qresource>
+</RCC>
