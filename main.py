@@ -22,10 +22,10 @@ import requests
 
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtGui import QGuiApplication, QPainter, QColor, QIcon, QAction, QDesktopServices
-from PySide6.QtCore import QSharedMemory, Qt, Slot, QDateTime, QTime, QDate, QUrl, QPoint, Signal, QThread, QObject
+from PySide6.QtCore import QSharedMemory, Qt, Slot, QDateTime, QTime, QDate, QUrl, Signal, QThread, QObject
 from PySide6.QtWidgets import QApplication, QFileDialog, QTableWidgetItem, QVBoxLayout, QWidget, QLabel, QSystemTrayIcon
 
-from qfluentwidgets import FluentIcon, PushButton, FluentWindow, NavigationItemPosition, SplashScreen, InfoBar, InfoBarPosition, RoundMenu
+from qfluentwidgets import FluentIcon, PushButton, FluentWindow, NavigationItemPosition, SplashScreen, InfoBar, InfoBarPosition, RoundMenu, InfoBarIcon
 
 from ui.Interface import chouqian1, chouqian2, statistics, settings, about
 from data import Data
@@ -43,6 +43,8 @@ class MainWindow(FluentWindow):
         self.setMinimumWidth(540)
         self.setWindowTitle('抽签')
         self.setWindowIcon(QIcon(':/chouqian/icon/logo.png'))
+
+        self.splashScreen = SplashScreen(self.windowIcon(), self)
 
         self.chouqian1_in_progress = False
         self.chouqian2_in_progress = False
@@ -72,9 +74,6 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.statistics, FluentIcon.PIE_SINGLE, '统计', position=NavigationItemPosition.TOP)
         self.addSubInterface(self.settings, FluentIcon.SETTING, '设置', position=NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.about, FluentIcon.INFO, '关于', position=NavigationItemPosition.BOTTOM)
-
-    def StartInterface(self):
-        self.splashScreen = SplashScreen(QIcon(':/chouqian/icon/logo.png'), self)
 
     def init_input(self):
         self.settings.SwitchButton.setChecked(data.cfg["draw_animation"])  # 抽签动画
@@ -334,30 +333,38 @@ class MainWindow(FluentWindow):
         )
 
     def check_update(self, IsAuto):
-        github_repo = "chenmozhijin/chouqian"
-        try:
-            latest_release = requests.get(f"https://api.github.com/repos/{github_repo}/releases/latest").json()
-            latest_version = latest_release["tag_name"]
-        except Exception as e:
-            if not IsAuto:
-                self.createInfoBar("error", "检查更新失败", str(e), 5000)
-            return
-        if latest_version != __version__:
-            infobar = InfoBar.info(
-                title='有新版本',
-                content=latest_version,
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP_LEFT,
-                duration=5000,
-                parent=self
-            )
-            Button = PushButton(MW.tr('前往更新'))
-            Button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://github.com/{github_repo}/releases/latest")))
-            infobar.addWidget(Button)
-            infobar.move(self.geometry().bottomLeft() + QPoint(0, 50))
-        elif not IsAuto:
-            self.createInfoBar("info", "当前已是最新版本", "", 5000)
+        # 为更新检查创建一个新的工作实例
+        self.update_checker = UpdateChecker(github_repo="chenmozhijin/chouqian", IsAuto=IsAuto)
+        self.update_checker_thread = QThread()
+        self.update_checker.update_finished.connect(self.handle_check_update_result)
+        self.update_checker_thread.started.connect(self.update_checker.run_update)
+        self.update_checker.moveToThread(self.update_checker_thread)
+
+        # 启动检查更新线程
+        self.update_checker_thread.start()
+
+    def handle_check_update_result(self, success, latest_version, IsAuto):
+        self.update_checker_thread.quit()
+        if success:
+            if latest_version != __version__:
+                infobar = InfoBar(
+                    icon=InfoBarIcon.INFORMATION,
+                    title='有新版本',
+                    content=latest_version,
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=5000,
+                    parent=self
+                )
+                Button = PushButton(MW.tr('前往更新'))
+                Button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://github.com/{self.update_checker.github_repo}/releases/latest")))
+                infobar.addWidget(Button)
+                infobar.show()
+            elif not IsAuto:
+                self.createInfoBar("info", "当前已是最新版本", "", 5000)
+        else:
+            self.createInfoBar("error", "检查更新失败", latest_version, 5000)
 
 
 class FloatingWindow(QWidget):
@@ -494,6 +501,23 @@ def load_config():
     MW.createInfoBar("success", "成功", "配置文件已成功导入。", 5000)
 
 
+class UpdateChecker(QObject):
+    update_finished = Signal(bool, str, bool)
+
+    def __init__(self, github_repo, IsAuto):
+        super(UpdateChecker, self).__init__()
+        self.github_repo = github_repo
+        self.IsAuto = IsAuto
+
+    def run_update(self):
+        try:
+            latest_release = requests.get(f"https://api.github.com/repos/{self.github_repo}/releases/latest").json()
+            latest_version = latest_release["tag_name"]
+            self.update_finished.emit(True, latest_version, self.IsAuto)
+        except Exception as e:
+            self.update_finished.emit(False, str(e), self.IsAuto)
+
+
 class HandleInstanceRepeatedRuns(QObject):
     AnotherInstanceStarts = Signal()
 
@@ -549,10 +573,10 @@ def exit_program():
         MW.close()
     if floating_window:
         floating_window.close()
-    if workerThread.isRunning():
-        workerThread.quit()
-        manager.deleteLater()
-        manager.AnotherInstanceStarts.disconnect()
+    if HandleInstanceRepeatedRunsThread.isRunning():
+        HandleInstanceRepeatedRunsThread.quit()
+        HandleInstanceRepeatedRuns.deleteLater()
+        HandleInstanceRepeatedRuns.AnotherInstanceStarts.disconnect()
     if tray_icon:
         tray_icon.hide()
     app.exit()
@@ -562,18 +586,18 @@ def exit_program():
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    manager = HandleInstanceRepeatedRuns()
-    workerThread = QThread()
-    manager.moveToThread(workerThread)
-    workerThread.start()
+    HandleInstanceRepeatedRuns = HandleInstanceRepeatedRuns()
+    HandleInstanceRepeatedRunsThread = QThread()
+    HandleInstanceRepeatedRuns.moveToThread(HandleInstanceRepeatedRunsThread)
+    HandleInstanceRepeatedRunsThread.start()
 
     rc.qInitResources()
 
     MW = MainWindow()
-    manager.AnotherInstanceStarts.connect(MW.show_window)
-    MW.StartInterface()
+    HandleInstanceRepeatedRuns.AnotherInstanceStarts.connect(MW.show_window)
 
     MW.show()
+    QApplication.processEvents()
     MW.AddSubInterface()
     data = Data()
     SystemRandom = random.SystemRandom()
@@ -585,6 +609,7 @@ if __name__ == "__main__":
     floating_window.show()
     tray_icon = TrayIcon()
     tray_icon.show()
+    QApplication.processEvents()
     MW.splashScreen.finish()
     if not data.list_names:
         MW.createInfoBar("warning", "注意", "没有可用的数据，请前往设置导入", 5000)
