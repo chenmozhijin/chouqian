@@ -48,6 +48,7 @@ class MainWindow(FluentWindow):
 
         self.chouqian1_in_progress = False
         self.chouqian2_in_progress = False
+        self.checkupdate_in_progress = False
 
     def closeEvent(self, event):
         # 隐藏窗口而不是关闭，使其最小化到托盘
@@ -208,7 +209,6 @@ class MainWindow(FluentWindow):
                             break
         chouqianLabel.clear()
         if self.settings.SwitchButton.indicator.isChecked():  # 抽签动画
-            starttime = time.time()
             if chouqian_count == 1:
                 animation_count = 5
                 sleeptime = 0.08
@@ -245,10 +245,9 @@ class MainWindow(FluentWindow):
                 self.setLabelText(chouqianLabel, src_chouqianLabelText + " " + chouqian_result)
                 time.sleep(sleeptime)
         else:
-            self.setLabelText(" ".join(chouqian_results))
+            self.setLabelText(chouqianLabel, " ".join(chouqian_results))
         for chouqian_result in chouqian_results:
             data.write_record(list_name, chouqian_result, int(time.time()))
-        print("耗时:" + str(time.time() - starttime))
 
         if type == 1:
             self.chouqian1_in_progress = False
@@ -329,15 +328,17 @@ class MainWindow(FluentWindow):
         )
 
     def check_update(self, IsAuto):
-        # 为更新检查创建一个新的工作实例
-        self.update_checker = UpdateChecker(github_repo="chenmozhijin/chouqian", IsAuto=IsAuto)
-        self.update_checker_thread = QThread()
-        self.update_checker.update_finished.connect(self.handle_check_update_result)
-        self.update_checker_thread.started.connect(self.update_checker.run_update)
-        self.update_checker.moveToThread(self.update_checker_thread)
+        if not self.checkupdate_in_progress:
+            self.checkupdate_in_progress = True
+            # 为更新检查创建一个新的工作实例
+            self.update_checker = UpdateChecker(github_repo="chenmozhijin/chouqian", IsAuto=IsAuto)
+            self.update_checker_thread = QThread()
+            self.update_checker.update_finished.connect(self.handle_check_update_result)
+            self.update_checker_thread.started.connect(self.update_checker.run_update)
+            self.update_checker.moveToThread(self.update_checker_thread)
 
-        # 启动检查更新线程
-        self.update_checker_thread.start()
+            # 启动检查更新线程
+            self.update_checker_thread.start()
 
     def handle_check_update_result(self, success, latest_version, IsAuto):
         self.update_checker_thread.quit()
@@ -359,8 +360,9 @@ class MainWindow(FluentWindow):
                 infobar.show()
             elif not IsAuto:
                 self.createInfoBar("info", "当前已是最新版本", "", 5000)
-        else:
+        elif not IsAuto:
             self.createInfoBar("error", "检查更新失败", latest_version, 5000)
+        self.checkupdate_in_progress = False
 
 
 class FloatingWindow(QWidget):
@@ -508,10 +510,14 @@ class UpdateChecker(QObject):
     def run_update(self):
         try:
             latest_release = requests.get(f"https://api.github.com/repos/{self.github_repo}/releases/latest").json()
-            latest_version = latest_release["tag_name"]
-            self.update_finished.emit(True, latest_version, self.IsAuto)
         except Exception as e:
             self.update_finished.emit(False, str(e), self.IsAuto)
+        else:
+            if "tag_name" in latest_release.keys():
+                latest_version = latest_release["tag_name"]
+                self.update_finished.emit(True, latest_version, self.IsAuto)
+            else:
+                self.update_finished.emit(False, "无法获取最新版本信息。", self.IsAuto)
 
 
 class HandleInstanceRepeatedRuns(QObject):
@@ -565,17 +571,11 @@ class HandleInstanceRepeatedRuns(QObject):
 
 
 def exit_program():
-    if MW:
-        MW.close()
-    if floating_window:
-        floating_window.close()
     if HandleInstanceRepeatedRunsThread.isRunning():
         HandleInstanceRepeatedRunsThread.quit()
-        HandleInstanceRepeatedRuns.deleteLater()
-        HandleInstanceRepeatedRuns.AnotherInstanceStarts.disconnect()
-    if tray_icon:
-        tray_icon.hide()
-    app.exit()
+    if MW.update_checker_thread.isRunning():
+        MW.update_checker_thread.quit()
+    HandleInstanceRepeatedRuns.deleteLater()
     sys.exit(0)
 
 
