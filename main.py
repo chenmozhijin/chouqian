@@ -59,7 +59,8 @@ class MainWindow(FluentWindow):
     def show_window(self):
         # 显示窗口
         self.show()
-        self.showNormal()
+        if self.isMinimized():
+            self.showNormal()
         self.raise_()
         self.activateWindow
 
@@ -147,14 +148,14 @@ class MainWindow(FluentWindow):
         self.chouqian2.Slider.setMaximum(data.cfg["groups_count"])
 
     @Slot()
-    def change_date(self, type):
+    def change_date(self, type_):
         start_time = self.statistics.CalendarPicker.getDate()
         end_time = self.statistics.CalendarPicker_2.getDate()
         start_timestamp = qdate_to_unix_timestamp(start_time)
         end_timestamp = qdate_to_unix_timestamp(end_time)
-        if type == "start_time" and start_timestamp > end_timestamp:
+        if type_ == "start_time" and start_timestamp > end_timestamp:
             self.statistics.CalendarPicker_2.setDate(start_time)
-        elif type == "end_time" and start_timestamp > end_timestamp:
+        elif type_ == "end_time" and start_timestamp > end_timestamp:
             self.statistics.CalendarPicker.setDate(end_time)
         self.SetUpStatisticsTable()
 
@@ -171,8 +172,8 @@ class MainWindow(FluentWindow):
             cp.update()
 
     @Slot()
-    def chouqian_start(self, type):
-        if type == 1:
+    def chouqian_start(self, type_):
+        if type_ == 1:
             if self.chouqian1_in_progress:
                 return
             self.chouqian1_in_progress = True
@@ -181,7 +182,7 @@ class MainWindow(FluentWindow):
             list_name = self.chouqian1.ComboBox.currentText()
             list_data = data.read_list(list_name)
             list_count = len(list_data)
-        elif type == 2:
+        elif type_ == 2:
             if self.chouqian2_in_progress:
                 return
             self.chouqian2_in_progress = True
@@ -249,9 +250,9 @@ class MainWindow(FluentWindow):
         for chouqian_result in chouqian_results:
             data.write_record(list_name, chouqian_result, int(time.time()))
 
-        if type == 1:
+        if type_ == 1:
             self.chouqian1_in_progress = False
-        elif type == 2:
+        elif type_ == 2:
             self.chouqian2_in_progress = False
 
     def setLabelText(self, Label, input_text):
@@ -292,13 +293,13 @@ class MainWindow(FluentWindow):
         table.resizeColumnsToContents()
 
     @Slot()
-    def change_chouqian_count(self, input, Interface):
-        if input == "Slider":
+    def change_chouqian_count(self, input_, Interface):
+        if input_ == "Slider":
             Interface.CaptionLabel.setText(str(Interface.Slider.value()))
-        elif input == "+":
+        elif input_ == "+":
             Interface.Slider.setValue(Interface.Slider.value() + 1)
             Interface.CaptionLabel.setText(str(Interface.Slider.value()))
-        elif input == "-":
+        elif input_ == "-":
             Interface.Slider.setValue(Interface.Slider.value() - 1)
             Interface.CaptionLabel.setText(str(Interface.Slider.value()))
 
@@ -308,14 +309,14 @@ class MainWindow(FluentWindow):
         if interface == "statistics":
             self.SetUpStatisticsTable()
 
-    def createInfoBar(self, type, title, content, duration):
-        if type == "error":
+    def createInfoBar(self, type_, title, content, duration):
+        if type_ == "error":
             infobar = InfoBar.error
-        elif type == "success":
+        elif type_ == "success":
             infobar = InfoBar.success
-        elif type == "warning":
+        elif type_ == "warning":
             infobar = InfoBar.warning
-        elif type == "info":
+        elif type_ == "info":
             infobar = InfoBar.info
         infobar(
             title=title,
@@ -509,7 +510,7 @@ class UpdateChecker(QObject):
 
     def run_update(self):
         try:
-            latest_release = requests.get(f"https://api.github.com/repos/{self.github_repo}/releases/latest").json()
+            latest_release = requests.get(f"https://api.github.com/repos/{self.github_repo}/releases/latest", timeout=5).json()
         except Exception as e:
             self.update_finished.emit(False, str(e), self.IsAuto)
         else:
