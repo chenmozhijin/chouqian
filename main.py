@@ -312,22 +312,18 @@ class MainWindow(FluentWindow):
     def createInfoBar(self, type, title, content, duration):
         if type == "error":
             infobar = InfoBar.error
-            position = InfoBarPosition.BOTTOM_RIGHT
         elif type == "success":
             infobar = InfoBar.success
-            position = InfoBarPosition.TOP_RIGHT
         elif type == "warning":
             infobar = InfoBar.warning
-            position = InfoBarPosition.BOTTOM_RIGHT
         elif type == "info":
             infobar = InfoBar.info
-            position = InfoBarPosition.TOP_RIGHT
         infobar(
             title=title,
             content=content,
             orient=Qt.Horizontal,
             isClosable=True,
-            position=position,
+            position=InfoBarPosition.TOP_RIGHT,
             duration=duration,
             parent=self
         )
