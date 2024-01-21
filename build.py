@@ -1,6 +1,11 @@
 import main
 import subprocess
+import time
 version = main.__version__.replace('v', '')
+year = time.strftime("%Y")
+if not year == "2024":
+    year = "2024-" + year
+
 
 subprocess.check_call(
     [
@@ -20,7 +25,7 @@ subprocess.check_call(
         "--output-filename=抽签.exe",
         "--product-name=抽签",
         "--product-version=" + version,
-        "--copyright=沉默の金",
+        f"--copyright=Copyright (C) {year}  沉默の金",
         "main.py"
     ]
 )
