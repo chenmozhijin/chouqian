@@ -25,7 +25,7 @@ from PySide6.QtGui import QGuiApplication, QPainter, QColor, QIcon, QAction, QDe
 from PySide6.QtCore import QSharedMemory, Qt, Slot, QDateTime, QTime, QDate, QUrl, Signal, QThread, QObject
 from PySide6.QtWidgets import QApplication, QFileDialog, QTableWidgetItem, QVBoxLayout, QWidget, QLabel, QSystemTrayIcon
 
-from qfluentwidgets import FluentIcon, PushButton, FluentWindow, NavigationItemPosition, SplashScreen, InfoBar, InfoBarPosition, RoundMenu, InfoBarIcon
+from qfluentwidgets import FluentIcon, PushButton, NavigationItemPosition, SplashScreen, InfoBar, InfoBarPosition, RoundMenu, InfoBarIcon, MSFluentWindow
 
 from ui.Interface import chouqian1, chouqian2, statistics, settings, about
 from data import Data
@@ -35,7 +35,7 @@ from icon import Icon
 __version__ = "v2.0"
 
 
-class MainWindow(FluentWindow):
+class MainWindow(MSFluentWindow):
 
     def __init__(self):
         super().__init__()
