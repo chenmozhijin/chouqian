@@ -10,7 +10,6 @@ if not year == "2024":
 subprocess.check_call(
     [
         "python", "-m", "nuitka",
-        "--onefile",
         "--standalone",
         "--follow-imports",
         "--lto=yes",

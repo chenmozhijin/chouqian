@@ -19,8 +19,6 @@ class chouqian1(QWidget, Ui_chouqian1):
     def __init__(self, parent=None):
         super(chouqian1, self).__init__(parent)
         self.setupUi(self)
-        # ScrollArea 设置透明背景
-        self.ScrollArea.setStyleSheet("background-color: transparent;")
 
 
 class chouqian2(QWidget, Ui_chouqian2):
@@ -28,8 +26,6 @@ class chouqian2(QWidget, Ui_chouqian2):
     def __init__(self, parent=None):
         super(chouqian2, self).__init__(parent)
         self.setupUi(self)
-        # ScrollArea 设置透明背景
-        self.ScrollArea.setStyleSheet("background-color: transparent;")
 
 
 class settings(QWidget, Ui_settings):

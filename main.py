@@ -1,38 +1,62 @@
-#    抽签
-#    Copyright (C) 2024  沉默の金
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (c) 2024 沉默の金
+import json
+import os
+import random
+import resource.resource_rc as rc
 import sys
 import time
-import json
-import random
 
 import requests
-
+from PySide6.QtCore import (
+    QDate,
+    QDateTime,
+    QObject,
+    QSharedMemory,
+    Qt,
+    QThread,
+    QTime,
+    QUrl,
+    Signal,
+    Slot,
+)
+from PySide6.QtGui import (
+    QAction,
+    QColor,
+    QDesktopServices,
+    QFont,
+    QGuiApplication,
+    QIcon,
+    QPainter,
+    QTextCursor,
+)
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
-from PySide6.QtGui import QGuiApplication, QPainter, QColor, QIcon, QAction, QDesktopServices
-from PySide6.QtCore import QSharedMemory, Qt, Slot, QDateTime, QTime, QDate, QUrl, Signal, QThread, QObject
-from PySide6.QtWidgets import QApplication, QFileDialog, QTableWidgetItem, QVBoxLayout, QWidget, QLabel, QSystemTrayIcon
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QLabel,
+    QSystemTrayIcon,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from qfluentwidgets import FluentIcon, PushButton, NavigationItemPosition, SplashScreen, InfoBar, InfoBarPosition, RoundMenu, InfoBarIcon, MSFluentWindow
-
-from ui.Interface import chouqian1, chouqian2, statistics, settings, about
 from data import Data
-import resource.resource_rc as rc
 from icon import Icon
+from qfluentwidgets import (
+    FluentIcon,
+    InfoBar,
+    InfoBarIcon,
+    InfoBarPosition,
+    MSFluentWindow,
+    NavigationItemPosition,
+    PushButton,
+    RoundMenu,
+    SplashScreen,
+)
+from ui.Interface import about, chouqian1, chouqian2, settings, statistics
 
-__version__ = "v2.0"
+__version__ = "v2.1"
 
 
 class MainWindow(MSFluentWindow):
@@ -51,12 +75,12 @@ class MainWindow(MSFluentWindow):
         self.checkupdate_in_progress = False
 
     def closeEvent(self, event):
-        # 隐藏窗口而不是关闭，使其最小化到托盘
+        # 隐藏窗口而不是关闭,使其最小化到托盘
         self.hide()
         event.ignore()
 
     @Slot()
-    def show_window(self):
+    def show_window(self) -> None:
         # 显示窗口
         self.show()
         if self.isMinimized():
@@ -134,12 +158,15 @@ class MainWindow(MSFluentWindow):
         self.chouqian1.Slider.setMinimum(1)
         self.chouqian1.Slider.setMaximum(list_count)
         self.chouqian1.Slider.setValue(1)
-        self.chouqian1.StrongBodyLabel.setStyleSheet("font-size: 30px")
 
         self.chouqian2.Slider.setMinimum(1)
         self.chouqian2.Slider.setMaximum(data.cfg["groups_count"])
         self.chouqian2.Slider.setValue(1)
-        self.chouqian2.StrongBodyLabel.setStyleSheet("font-size: 30px")
+
+        font = QFont()
+        font.setPointSize(30)
+        self.chouqian1.chouqian_textEdit.setFont(font)
+        self.chouqian2.chouqian_textEdit.setFont(font)
 
     @Slot()
     def change_groups_count(self):
@@ -177,7 +204,7 @@ class MainWindow(MSFluentWindow):
             if self.chouqian1_in_progress:
                 return
             self.chouqian1_in_progress = True
-            chouqianLabel = self.chouqian1.StrongBodyLabel
+            chouqian_TextEdit = self.chouqian1.chouqian_textEdit
             chouqian_count = self.chouqian1.Slider.value()
             list_name = self.chouqian1.ComboBox.currentText()
             list_data = data.read_list(list_name)
@@ -186,7 +213,7 @@ class MainWindow(MSFluentWindow):
             if self.chouqian2_in_progress:
                 return
             self.chouqian2_in_progress = True
-            chouqianLabel = self.chouqian2.StrongBodyLabel
+            chouqian_TextEdit = self.chouqian2.chouqian_textEdit
             chouqian_count = self.chouqian2.Slider.value()
             list_name = "小组抽签"
             list_data = []
@@ -208,7 +235,7 @@ class MainWindow(MSFluentWindow):
                         if new_result not in last_records and new_result not in chouqian_results[:index] + chouqian_results[index + 1:]:
                             chouqian_results[index] = new_result
                             break
-        chouqianLabel.clear()
+        chouqian_TextEdit.setPlainText("")
         if self.settings.SwitchButton.indicator.isChecked():  # 抽签动画
             if chouqian_count == 1:
                 animation_count = 5
@@ -238,15 +265,28 @@ class MainWindow(MSFluentWindow):
             if animation_count > list_count:
                 animation_count = list_count
 
+            def del_text(n: int) -> None:
+                cursor = chouqian_TextEdit.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                cursor.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, n)
+                cursor.removeSelectedText()
+                cursor.movePosition(QTextCursor.End)
+
+            space = ""
             for chouqian_result in chouqian_results:
-                src_chouqianLabelText = chouqianLabel.text()
                 for i in range(animation_count):
-                    self.setLabelText(chouqianLabel, src_chouqianLabelText + " " + random.choice(list_data))
-                    time.sleep(sleeptime)
-                self.setLabelText(chouqianLabel, src_chouqianLabelText + " " + chouqian_result)
+                    animation_text = space + random.choice(list_data)  # noqa: S311
+                    chouqian_TextEdit.insertPlainText(animation_text)
+                    chouqian_TextEdit.setAlignment(Qt.AlignCenter)
+                    QApplication.processEvents()
+                    del_text(len(animation_text))
+                chouqian_TextEdit.insertPlainText(space + chouqian_result)
+                chouqian_TextEdit.setAlignment(Qt.AlignCenter)
+                QApplication.processEvents()
                 time.sleep(sleeptime)
+                space = " "
         else:
-            self.setLabelText(chouqianLabel, " ".join(chouqian_results))
+            chouqian_TextEdit.setPlainText(" ".join(chouqian_results))
         for chouqian_result in chouqian_results:
             data.write_record(list_name, chouqian_result, int(time.time()))
 
@@ -255,11 +295,7 @@ class MainWindow(MSFluentWindow):
         elif type_ == 2:
             self.chouqian2_in_progress = False
 
-    def setLabelText(self, Label, input_text):
-        Label.setText(input_text)
-        QApplication.processEvents()
-
-    def SetUpStatisticsTable(self):
+    def SetUpStatisticsTable(self) -> None:
         local_timezone_offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
         start_time = qdate_to_unix_timestamp(self.statistics.CalendarPicker.getDate())
         end_time = qdate_to_unix_timestamp(self.statistics.CalendarPicker_2.getDate())
@@ -281,10 +317,8 @@ class MainWindow(MSFluentWindow):
                 last_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(value["last_time"] - local_timezone_offset))
             else:
                 last_time = "从未被抽中"
-            if total != 0:
-                rate = round((value["count"] / total) * 100, 3)
-            else:
-                rate = 0
+            rate = round(value["count"] / total * 100, 3) if total != 0 else 0
+
             table.setItem(row, 0, QTableWidgetItem(str(key)))
             table.setItem(row, 1, QTableWidgetItem(str(value["count"])))
             table.setItem(row, 2, QTableWidgetItem(str(rate) + "%"))
@@ -309,7 +343,7 @@ class MainWindow(MSFluentWindow):
         if interface == "statistics":
             self.SetUpStatisticsTable()
 
-    def createInfoBar(self, type_, title, content, duration):
+    def createInfoBar(self, type_, title, content, duration) -> None:
         if type_ == "error":
             infobar = InfoBar.error
         elif type_ == "success":
@@ -328,7 +362,7 @@ class MainWindow(MSFluentWindow):
             parent=self
         )
 
-    def check_update(self, IsAuto):
+    def check_update(self, IsAuto) -> None:
         if not self.checkupdate_in_progress:
             self.checkupdate_in_progress = True
             # 为更新检查创建一个新的工作实例
@@ -341,7 +375,7 @@ class MainWindow(MSFluentWindow):
             # 启动检查更新线程
             self.update_checker_thread.start()
 
-    def handle_check_update_result(self, success, latest_version, IsAuto):
+    def handle_check_update_result(self, success, latest_version, IsAuto) -> None:
         self.update_checker_thread.quit()
         if success:
             if latest_version != __version__:
@@ -353,7 +387,7 @@ class MainWindow(MSFluentWindow):
                     isClosable=True,
                     position=InfoBarPosition.TOP_RIGHT,
                     duration=5000,
-                    parent=self
+                    parent=self,
                 )
                 Button = PushButton(MW.tr('前往更新'))
                 Button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://github.com/{self.update_checker.github_repo}/releases/latest")))
@@ -367,7 +401,7 @@ class MainWindow(MSFluentWindow):
 
 
 class FloatingWindow(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         screen_geometry = QGuiApplication.primaryScreen().availableGeometry()
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -385,33 +419,33 @@ class FloatingWindow(QWidget):
         layout.addWidget(self.label)
         self.setLayout(layout)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
             self.draggable = True
             self.offset = event.position()
 
             MW.show_window()
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event) -> None:
         self.draggable = False
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event) -> None:
         if self.draggable:
             new_pos = self.mapToParent(event.position() - self.offset).toPoint()
             self.move(new_pos)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(255, 255, 255, 100))
 
 
 class TrayIcon(QSystemTrayIcon):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         # 创建托盘图标
         tray_icon = QIcon(':/chouqian/icon/logo.png')
         self.setIcon(tray_icon)
@@ -444,12 +478,12 @@ def qdate_to_unix_timestamp(qdate):
     return qdatetime.toSecsSinceEpoch()
 
 
-def load_config():
+def load_config() -> None:
     config_path, _ = QFileDialog.getOpenFileName(filter="抽签配置文件 (*.cqp)")
     if not config_path:
         return
 
-    with open(config_path, 'r', encoding='utf-8') as file:
+    with open(config_path, encoding='utf-8') as file:
         try:
             config = json.load(file)
         except json.JSONDecodeError as e:
@@ -487,7 +521,7 @@ def load_config():
             MW.createInfoBar("error", "错误", "设置项错误。", -1)
             return
 
-    if config["settings"]["default_list"] not in lists.keys():
+    if config["settings"]["default_list"] not in lists:
         MW.createInfoBar("error", "错误", "默认列表不存在。", -1)
         return
 
@@ -503,18 +537,18 @@ def load_config():
 class UpdateChecker(QObject):
     update_finished = Signal(bool, str, bool)
 
-    def __init__(self, github_repo, IsAuto):
-        super(UpdateChecker, self).__init__()
+    def __init__(self, github_repo, IsAuto) -> None:
+        super().__init__()
         self.github_repo = github_repo
         self.IsAuto = IsAuto
 
-    def run_update(self):
+    def run_update(self) -> None:
         try:
             latest_release = requests.get(f"https://api.github.com/repos/{self.github_repo}/releases/latest", timeout=5).json()
         except Exception as e:
             self.update_finished.emit(False, str(e), self.IsAuto)
         else:
-            if "tag_name" in latest_release.keys():
+            if "tag_name" in latest_release:
                 latest_version = latest_release["tag_name"]
                 self.update_finished.emit(True, latest_version, self.IsAuto)
             else:
@@ -596,7 +630,8 @@ if __name__ == "__main__":
     MW.show()
     QApplication.processEvents()
     MW.AddSubInterface()
-    data = Data()
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    data = Data(current_directory)
     SystemRandom = random.SystemRandom()
     MW.init_input()
     MW.init_chouqian()

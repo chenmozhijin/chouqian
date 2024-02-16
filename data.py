@@ -1,9 +1,11 @@
+import os
 import sqlite3
 
 
 class Data:
-    def __init__(self):
+    def __init__(self, current_directory: str):
         self.db_version = 1
+        self.db_path = os.path.join(current_directory, 'chouqiandata.db')
         self.cfg = {
             "draw_animation": True,
             "reduce_duplication": True,
@@ -16,7 +18,7 @@ class Data:
         self.cfg_strkeys = [key for key, value in self.cfg.items() if isinstance(value, str)]
         self.list_names = []
         self.islistsAvailable = False
-        self.conn = sqlite3.connect('chouqiandata.db')
+        self.conn = sqlite3.connect(self.db_path)
         self.init_db()
         self.read_lists()
         self.read_settings()

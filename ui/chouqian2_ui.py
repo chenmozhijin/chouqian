@@ -16,10 +16,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLayout,
-    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
+    QSizePolicy, QSpacerItem, QTextEdit, QVBoxLayout,
+    QWidget)
 
-from qfluentwidgets import (CaptionLabel, PillPushButton, PushButton, ScrollArea,
-    Slider, StrongBodyLabel, TitleLabel, ToggleButton)
+from qfluentwidgets import (CaptionLabel, PillPushButton, PushButton, Slider,
+    TitleLabel, ToggleButton)
 
 class Ui_chouqian2(object):
     def setupUi(self, chouqian2):
@@ -43,35 +44,34 @@ class Ui_chouqian2(object):
 
         self.verticalLayout.addWidget(self.TitleLabel, 0, Qt.AlignLeft)
 
-        self.ScrollArea = ScrollArea(chouqian2)
-        self.ScrollArea.setObjectName(u"ScrollArea")
-        self.ScrollArea.setFrameShape(QFrame.NoFrame)
-        self.ScrollArea.setWidgetResizable(True)
-        self.scrollAreaWidgetContents = QWidget()
-        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 642, 247))
-        self.scrollAreaWidgetContents.setAutoFillBackground(True)
-        self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.StrongBodyLabel = StrongBodyLabel(self.scrollAreaWidgetContents)
-        self.StrongBodyLabel.setObjectName(u"StrongBodyLabel")
-        self.StrongBodyLabel.setTextFormat(Qt.PlainText)
-        self.StrongBodyLabel.setAlignment(Qt.AlignCenter)
-        self.StrongBodyLabel.setWordWrap(True)
+        self.chouqian_textEdit = QTextEdit(chouqian2)
+        self.chouqian_textEdit.setObjectName(u"chouqian_textEdit")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.chouqian_textEdit.sizePolicy().hasHeightForWidth())
+        self.chouqian_textEdit.setSizePolicy(sizePolicy2)
+        self.chouqian_textEdit.setMinimumSize(QSize(0, 0))
+        self.chouqian_textEdit.setStyleSheet(u"QTextEdit {\n"
+"     background-color: transparent;\n"
+"     border: none;\n"
+"	font-size: 30px;\n"
+"	text-align: center;\n"
+"}")
+        self.chouqian_textEdit.setFrameShape(QFrame.NoFrame)
+        self.chouqian_textEdit.setFrameShadow(QFrame.Plain)
+        self.chouqian_textEdit.setReadOnly(True)
+        self.chouqian_textEdit.setTextInteractionFlags(Qt.NoTextInteraction)
 
-        self.verticalLayout_3.addWidget(self.StrongBodyLabel)
-
-        self.ScrollArea.setWidget(self.scrollAreaWidgetContents)
-
-        self.verticalLayout.addWidget(self.ScrollArea)
+        self.verticalLayout.addWidget(self.chouqian_textEdit)
 
         self.CaptionLabel = CaptionLabel(chouqian2)
         self.CaptionLabel.setObjectName(u"CaptionLabel")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.CaptionLabel.sizePolicy().hasHeightForWidth())
-        self.CaptionLabel.setSizePolicy(sizePolicy2)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.CaptionLabel.sizePolicy().hasHeightForWidth())
+        self.CaptionLabel.setSizePolicy(sizePolicy3)
         self.CaptionLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout.addWidget(self.CaptionLabel)
@@ -140,7 +140,14 @@ class Ui_chouqian2(object):
     def retranslateUi(self, chouqian2):
         chouqian2.setWindowTitle(QCoreApplication.translate("chouqian2", u"Form", None))
         self.TitleLabel.setText(QCoreApplication.translate("chouqian2", u"\u968f\u673a\u5c0f\u7ec4", None))
-        self.StrongBodyLabel.setText("")
+        self.chouqian_textEdit.setHtml(QCoreApplication.translate("chouqian2", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"li.unchecked::marker { content: \"\\2610\"; }\n"
+"li.checked::marker { content: \"\\2612\"; }\n"
+"</style></head><body style=\" font-family:'Microsoft YaHei UI'; font-size:30px; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>", None))
         self.CaptionLabel.setText(QCoreApplication.translate("chouqian2", u"1", None))
         self.PillPushButton.setText(QCoreApplication.translate("chouqian2", u"-", None))
         self.PillPushButton_2.setText(QCoreApplication.translate("chouqian2", u"+", None))
