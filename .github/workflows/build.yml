@@ -103,7 +103,7 @@ jobs:
                 then
                   icon_filename="logo.icns"
                 fi
-                pyinstaller --onedir --contents-directory . --clean --windowed --name chouqiandata --specpath dist/spec --distpath dist/dist --workpath dist/build --icon $(pwd)/res/img/icon/$icon_filename LDDC.py
+                pyinstaller --onedir --contents-directory . --clean --windowed --name chouqiandata --specpath dist/spec --distpath dist/dist --workpath dist/build --icon $(pwd)/res/img/icon/$icon_filename main.py
 
             - name: create dmg
               if: ${{ matrix.os == 'macos-latest' }}
