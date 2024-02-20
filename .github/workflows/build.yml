@@ -1,4 +1,4 @@
-name: build LDDC
+name: build chouqian
 
 on:
     push:
