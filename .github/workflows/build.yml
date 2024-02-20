@@ -219,7 +219,8 @@ jobs:
                 7z a -tzip -mx=9 ../../../upload/LDDC-${{ steps.info.outputs.version }}-windows-${{ steps.arch.outputs.arch }}.zip LDDC
 
             - name: Upload
-              uses: false
+              if: false
+              uses: actions/upload-artifact@v4
               with:
                 name: ${{ runner.os }} - ${{ matrix.arch }} artifacts
                 path: |
