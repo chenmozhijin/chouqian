@@ -16,17 +16,17 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLayout,
-    QSizePolicy, QSpacerItem, QTextEdit, QVBoxLayout,
-    QWidget)
+    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 from qfluentwidgets import (CaptionLabel, ComboBox, PillPushButton, PushButton,
-    Slider, TitleLabel, ToggleButton)
+    ScrollArea, Slider, TitleLabel, ToggleButton)
+from ui.custom_widgets import TextLineEdit
 
 class Ui_chouqian1(object):
     def setupUi(self, chouqian1):
         if not chouqian1.objectName():
             chouqian1.setObjectName(u"chouqian1")
-        chouqian1.resize(660, 460)
+        chouqian1.resize(660, 442)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -56,8 +56,22 @@ class Ui_chouqian1(object):
 
         self.verticalLayout.addWidget(self.ComboBox)
 
-        self.chouqian_textEdit = QTextEdit(chouqian1)
+        self.ScrollArea = ScrollArea(chouqian1)
+        self.ScrollArea.setObjectName(u"ScrollArea")
+        self.ScrollArea.setStyleSheet(u"background-color: transparent;")
+        self.ScrollArea.setFrameShape(QFrame.NoFrame)
+        self.ScrollArea.setFrameShadow(QFrame.Plain)
+        self.ScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.ScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ScrollArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 625, 210))
+        self.verticalLayout_2 = QVBoxLayout(self.scrollAreaWidgetContents)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.chouqian_textEdit = TextLineEdit(self.scrollAreaWidgetContents)
         self.chouqian_textEdit.setObjectName(u"chouqian_textEdit")
+        self.chouqian_textEdit.setEnabled(True)
         sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
@@ -72,10 +86,16 @@ class Ui_chouqian1(object):
 "}")
         self.chouqian_textEdit.setFrameShape(QFrame.NoFrame)
         self.chouqian_textEdit.setFrameShadow(QFrame.Plain)
+        self.chouqian_textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.chouqian_textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.chouqian_textEdit.setReadOnly(True)
         self.chouqian_textEdit.setTextInteractionFlags(Qt.NoTextInteraction)
 
-        self.verticalLayout.addWidget(self.chouqian_textEdit)
+        self.verticalLayout_2.addWidget(self.chouqian_textEdit)
+
+        self.ScrollArea.setWidget(self.scrollAreaWidgetContents)
+
+        self.verticalLayout.addWidget(self.ScrollArea)
 
         self.CaptionLabel = CaptionLabel(chouqian1)
         self.CaptionLabel.setObjectName(u"CaptionLabel")

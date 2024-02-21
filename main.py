@@ -56,7 +56,7 @@ from qfluentwidgets import (
 )
 from ui.Interface import about, chouqian1, chouqian2, settings, statistics
 
-__version__ = "v2.1"
+__version__ = "v2.2"
 
 
 class MainWindow(MSFluentWindow):
@@ -274,14 +274,12 @@ class MainWindow(MSFluentWindow):
 
             space = ""
             for chouqian_result in chouqian_results:
-                for i in range(animation_count):
+                for _i in range(animation_count):
                     animation_text = space + random.choice(list_data)  # noqa: S311
                     chouqian_TextEdit.insertPlainText(animation_text)
-                    chouqian_TextEdit.setAlignment(Qt.AlignCenter)
                     QApplication.processEvents()
                     del_text(len(animation_text))
                 chouqian_TextEdit.insertPlainText(space + chouqian_result)
-                chouqian_TextEdit.setAlignment(Qt.AlignCenter)
                 QApplication.processEvents()
                 time.sleep(sleeptime)
                 space = " "
