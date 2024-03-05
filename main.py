@@ -56,7 +56,7 @@ from qfluentwidgets import (
 )
 from ui.Interface import about, chouqian1, chouqian2, settings, statistics
 
-__version__ = "v2.2"
+__version__ = "v2.3"
 
 
 class MainWindow(MSFluentWindow):
