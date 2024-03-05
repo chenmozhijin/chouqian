@@ -279,6 +279,7 @@ class MainWindow(MSFluentWindow):
                     chouqian_TextEdit.insertPlainText(animation_text)
                     QApplication.processEvents()
                     del_text(len(animation_text))
+                    time.sleep(sleeptime)
                 chouqian_TextEdit.insertPlainText(space + chouqian_result)
                 QApplication.processEvents()
                 time.sleep(sleeptime)
