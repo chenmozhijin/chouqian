@@ -96,7 +96,7 @@ class MainWindow(MSFluentWindow):
 
         self.setFocus()
 
-    def add_interfaces(self) -> None:
+    def init_interfaces(self) -> None:
         self.chouqian1 = chouqian1(self)
         self.chouqian2 = chouqian2(self)
         self.statistics = statistics(self)
@@ -112,6 +112,11 @@ class MainWindow(MSFluentWindow):
         QScroller.grabGesture(self.statistics.TableWidget.viewport(), QScroller.LeftMouseButtonGesture)
         QScroller.grabGesture(self.chouqian1.ScrollArea.viewport(), QScroller.LeftMouseButtonGesture)
         QScroller.grabGesture(self.chouqian2.ScrollArea.viewport(), QScroller.LeftMouseButtonGesture)
+
+        self.chouqian1.PillPushButton_reduce.setCheckable(False)
+        self.chouqian1.PillPushButton_add.setCheckable(False)
+        self.chouqian2.PillPushButton_reduce.setCheckable(False)
+        self.chouqian2.PillPushButton_add.setCheckable(False)
 
     def init_input(self) -> None:
         self.settings.SwitchButton.setChecked(data.cfg["draw_animation"])  # 抽签动画
@@ -144,14 +149,14 @@ class MainWindow(MSFluentWindow):
         self.settings.ComboBox.currentIndexChanged.connect(lambda: data.write_settings("default_list", self.settings.ComboBox.currentText()))  # 默认列表
 
         self.chouqian1.Slider.valueChanged.connect(lambda: self.change_chouqian_count("Slider", self.chouqian1))
-        self.chouqian1.PillPushButton.clicked.connect(lambda: self.change_chouqian_count("-", self.chouqian1))
-        self.chouqian1.PillPushButton_2.clicked.connect(lambda: self.change_chouqian_count("+", self.chouqian1))
+        self.chouqian1.PillPushButton_reduce.clicked.connect(lambda: self.change_chouqian_count("-", self.chouqian1))
+        self.chouqian1.PillPushButton_add.clicked.connect(lambda: self.change_chouqian_count("+", self.chouqian1))
         self.chouqian1.ComboBox.currentIndexChanged.connect(self.init_chouqian)
         self.chouqian1.PushButton.clicked.connect(lambda: self.chouqian_start(1))
 
         self.chouqian2.Slider.valueChanged.connect(lambda: self.change_chouqian_count("Slider", self.chouqian2))
-        self.chouqian2.PillPushButton.clicked.connect(lambda: self.change_chouqian_count("-", self.chouqian2))
-        self.chouqian2.PillPushButton_2.clicked.connect(lambda: self.change_chouqian_count("+", self.chouqian2))
+        self.chouqian2.PillPushButton_reduce.clicked.connect(lambda: self.change_chouqian_count("-", self.chouqian2))
+        self.chouqian2.PillPushButton_add.clicked.connect(lambda: self.change_chouqian_count("+", self.chouqian2))
         self.chouqian2.PushButton.clicked.connect(lambda: self.chouqian_start(2))
 
         self.statistics.CalendarPicker.dateChanged.connect(lambda: self.change_date("start_time"))
@@ -644,7 +649,7 @@ if __name__ == "__main__":
 
     MW.show()
     QApplication.processEvents()
-    MW.add_interfaces()
+    MW.init_interfaces()
     current_directory = os.path.dirname(os.path.abspath(__file__))
     data = Data(current_directory)
     SystemRandom = random.SystemRandom()

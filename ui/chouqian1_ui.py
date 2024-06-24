@@ -120,12 +120,12 @@ class Ui_chouqian1:
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer)
 
-        self.PillPushButton = PillPushButton(chouqian1)
-        self.PillPushButton.setObjectName("PillPushButton")
-        sizePolicy1.setHeightForWidth(self.PillPushButton.sizePolicy().hasHeightForWidth())
-        self.PillPushButton.setSizePolicy(sizePolicy1)
+        self.PillPushButton_reduce = PillPushButton(chouqian1)
+        self.PillPushButton_reduce.setObjectName("PillPushButton_reduce")
+        sizePolicy1.setHeightForWidth(self.PillPushButton_reduce.sizePolicy().hasHeightForWidth())
+        self.PillPushButton_reduce.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout_3.addWidget(self.PillPushButton)
+        self.horizontalLayout_3.addWidget(self.PillPushButton_reduce)
 
         self.Slider = Slider(chouqian1)
         self.Slider.setObjectName("Slider")
@@ -136,12 +136,12 @@ class Ui_chouqian1:
 
         self.horizontalLayout_3.addWidget(self.Slider)
 
-        self.PillPushButton_2 = PillPushButton(chouqian1)
-        self.PillPushButton_2.setObjectName("PillPushButton_2")
-        sizePolicy1.setHeightForWidth(self.PillPushButton_2.sizePolicy().hasHeightForWidth())
-        self.PillPushButton_2.setSizePolicy(sizePolicy1)
+        self.PillPushButton_add = PillPushButton(chouqian1)
+        self.PillPushButton_add.setObjectName("PillPushButton_add")
+        sizePolicy1.setHeightForWidth(self.PillPushButton_add.sizePolicy().hasHeightForWidth())
+        self.PillPushButton_add.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout_3.addWidget(self.PillPushButton_2)
+        self.horizontalLayout_3.addWidget(self.PillPushButton_add)
 
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -185,8 +185,8 @@ class Ui_chouqian1:
 "</style></head><body style=\" font-family:'Microsoft YaHei UI'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:30px;\"><br /></p></body></html>", None))
         self.CaptionLabel.setText(QCoreApplication.translate("chouqian1", "1", None))
-        self.PillPushButton.setText(QCoreApplication.translate("chouqian1", "-", None))
-        self.PillPushButton_2.setText(QCoreApplication.translate("chouqian1", "+", None))
+        self.PillPushButton_reduce.setText(QCoreApplication.translate("chouqian1", "-", None))
+        self.PillPushButton_add.setText(QCoreApplication.translate("chouqian1", "+", None))
         self.PushButton.setText(QCoreApplication.translate("chouqian1", "\u62bd\u7b7e", None))
     # retranslateUi
 

@@ -152,7 +152,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       </spacer>
      </item>
      <item>
-      <widget class="PillPushButton" name="PillPushButton">
+      <widget class="PillPushButton" name="PillPushButton_reduce">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -184,7 +184,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       </widget>
      </item>
      <item>
-      <widget class="PillPushButton" name="PillPushButton_2">
+      <widget class="PillPushButton" name="PillPushButton_add">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
