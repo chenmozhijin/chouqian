@@ -1,4 +1,6 @@
 # coding:utf-8
+import math
+
 from typing import Dict, List
 from PySide6.QtCore import Qt, Signal, QRectF, Property, QPoint, QEvent
 from PySide6.QtGui import QPainter, QFont, QHoverEvent, QAction
@@ -81,7 +83,7 @@ class BreadcrumbItem(BreadcrumbWidget):
         self.text = text
 
         rect = self.fontMetrics().boundingRect(text)
-        w = rect.width() + 1
+        w = rect.width() + math.ceil(self.font().pixelSize() / 10)
         if not self.isRoot():
             w += self.spacing * 2
 
@@ -192,7 +194,7 @@ class BreadcrumbBar(QWidget):
         if not 0 <= index < len(self.items) or index == self.currentIndex():
             return
 
-        if self.currentIndex() >= 0:
+        if 0<= self.currentIndex() < len(self.items):
             self.currentItem().setSelected(False)
 
         self._currentIndex = index
@@ -242,14 +244,17 @@ class BreadcrumbBar(QWidget):
 
     def popItem(self):
         """ pop trailing item """
-        item = self.items.pop()
-        self.itemMap.pop(item.routeKey)
-        item.deleteLater()
+        if not self.items:
+            return
 
-        if self.currentIndex() >= item.index:
+        if self.count() >= 2:
             self.setCurrentIndex(self.currentIndex() - 1)
+        else:
+            self.clear()
 
-        self.updateGeometry()
+    def count(self):
+        """ Returns the number of items """
+        return len(self.items)
 
     def updateGeometry(self):
         if not self.items:
@@ -311,7 +316,7 @@ class BreadcrumbBar(QWidget):
         hd = menu.view.heightForAnimation(pd, MenuAnimationType.DROP_DOWN)
 
         pu = self.mapToGlobal(QPoint(x, 0))
-        hu = menu.view.heightForAnimation(pd, MenuAnimationType.PULL_UP)
+        hu = menu.view.heightForAnimation(pu, MenuAnimationType.PULL_UP)
 
         if hd >= hu:
             menu.view.adjustSize(pd, MenuAnimationType.DROP_DOWN)

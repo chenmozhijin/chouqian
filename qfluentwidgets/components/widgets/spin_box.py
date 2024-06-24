@@ -4,7 +4,7 @@ from enum import Enum
 from PySide6.QtCore import Qt, QSize, QRectF, QPoint
 from PySide6.QtGui import QPainter, QPainterPath, QColor
 from PySide6.QtWidgets import (QSpinBox, QDoubleSpinBox, QToolButton, QHBoxLayout,
-                               QDateEdit, QDateTimeEdit, QTimeEdit, QVBoxLayout)
+                               QDateEdit, QDateTimeEdit, QTimeEdit, QVBoxLayout, QApplication)
 
 from ...common.style_sheet import FluentStyleSheet, themeColor, isDarkTheme
 from ...common.icon import FluentIconBase, Theme, getIconColor
@@ -49,7 +49,9 @@ class SpinButton(QToolButton):
         painter.setRenderHints(QPainter.Antialiasing |
                                QPainter.SmoothPixmapTransform)
 
-        if self.isPressed:
+        if not self.isEnabled():
+            painter.setOpacity(0.36)
+        elif self.isPressed:
             painter.setOpacity(0.7)
 
         self._icon.render(painter, QRectF(10, 6.5, 11, 11))
@@ -123,6 +125,15 @@ class SpinBoxBase:
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._showContextMenu)
 
+    def setReadOnly(self, isReadOnly: bool):
+        super().setReadOnly(isReadOnly)
+        self.setSymbolVisible(not isReadOnly)
+
+    def setSymbolVisible(self, isVisible: bool):
+        """ set whether the spin symbol is visible """
+        self.setProperty("symbolVisible", isVisible)
+        self.setStyle(QApplication.style())
+
     def _showContextMenu(self, pos):
         menu = LineEditMenu(self.lineEdit())
         menu.exec_(self.mapToGlobal(pos))
@@ -167,6 +178,11 @@ class InlineSpinBoxBase(SpinBoxBase):
         self.upButton.clicked.connect(self.stepUp)
         self.downButton.clicked.connect(self.stepDown)
 
+    def setSymbolVisible(self, isVisible: bool):
+        super().setSymbolVisible(isVisible)
+        self.upButton.setVisible(isVisible)
+        self.downButton.setVisible(isVisible)
+
     def setAccelerated(self, on: bool):
         super().setAccelerated(on)
         self.upButton.setAutoRepeat(on)
@@ -201,8 +217,12 @@ class CompactSpinBoxBase(SpinBoxBase):
         super().focusInEvent(e)
         self._showFlyout()
 
+    def setSymbolVisible(self, isVisible: bool):
+        super().setSymbolVisible(isVisible)
+        self.compactSpinButton.setVisible(isVisible)
+
     def _showFlyout(self):
-        if self.spinFlyout.isVisible():
+        if self.spinFlyout.isVisible() or self.isReadOnly():
             return
 
         y = int(self.compactSpinButton.height() / 2 - 46)

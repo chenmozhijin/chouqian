@@ -44,9 +44,11 @@ class Data:
         c = self.conn.cursor()
         c.execute("SELECT * FROM settings")
         for setting in c.fetchall():
-            if setting[1] == "default_list" and setting[2] not in self.list_names:
-                continue
-            if setting[1] in self.cfg_boolkeys:
+            if setting[1] == "default_list":
+                if str(setting[2]) not in self.list_names:
+                    continue
+                self.cfg["default_list"] = str(setting[2])
+            elif setting[1] in self.cfg_boolkeys:
                 if setting[2] == 1:
                     self.cfg[setting[1]] = True
                 elif setting[2] == 0:

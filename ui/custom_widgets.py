@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QTextDocument
+from PySide6.QtGui import QColor, QTextDocument
 from PySide6.QtWidgets import QTextEdit
 
 
@@ -7,27 +7,35 @@ class TextLineEdit(QTextEdit):
     topMarginCorrection = -4  # not sure why needed
     returnPressed = Signal()
 
-    def __init__(self, parent=None, fontSize=10, verticalMargin=20):
+    def __init__(self, parent=None, fontSize: int = 10, verticalMargin=20):
         QTextEdit.__init__(self, parent)
-        self.parent = parent
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setLineWrapMode(QTextEdit.NoWrap)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setTextColor(QColor(0, 0, 0))
         self.setFontPointSize(fontSize)
         self.setViewportMargins(
-            -verticalMargin, self.topMarginCorrection, 0, 0
+            -verticalMargin, self.topMarginCorrection, 0, 0,
         )  # left, top, right, bottom
         # Set up document with appropriate margins and font
         self.document = QTextDocument()
-        currentFont = self.currentFont()
-        currentFont.setPointSize(fontSize)
-        self.document.setDefaultFont(currentFont)
+        current_font = self.currentFont()
+        current_font.setPointSize(fontSize)
+        self.document.setDefaultFont(current_font)
         self.document.setDocumentMargin(verticalMargin)
         self.setFixedHeight(self.document.size().height())
         self.setDocument(self.document)
 
         self.setLineWrapMode(QTextEdit.WidgetWidth)
+
+        self.setStyleSheet("""QTextEdit {
+                                background-color: transparent;
+                                border: none;
+                                font-size: 30px;
+                                text-align: center;
+                                color: black;
+                            }""")
 
     def insertPlainText(self, text: str) -> None:
         super().insertPlainText(text)

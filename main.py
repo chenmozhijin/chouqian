@@ -22,6 +22,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QAction,
+    QCloseEvent,
     QColor,
     QDesktopServices,
     QFont,
@@ -35,6 +36,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
     QLabel,
+    QScroller,
     QSystemTrayIcon,
     QTableWidgetItem,
     QVBoxLayout,
@@ -56,12 +58,12 @@ from qfluentwidgets import (
 )
 from ui.Interface import about, chouqian1, chouqian2, settings, statistics
 
-__version__ = "v2.3"
+__version__ = "v2.4"
 
 
 class MainWindow(MSFluentWindow):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.resize(700, 560)
         self.setMinimumWidth(540)
@@ -74,7 +76,7 @@ class MainWindow(MSFluentWindow):
         self.chouqian2_in_progress = False
         self.checkupdate_in_progress = False
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         # 隐藏窗口而不是关闭,使其最小化到托盘
         self.hide()
         event.ignore()
@@ -82,13 +84,19 @@ class MainWindow(MSFluentWindow):
     @Slot()
     def show_window(self) -> None:
         # 显示窗口
-        self.show()
         if self.isMinimized():
             self.showNormal()
-        self.raise_()
-        self.activateWindow
+        self.activateWindow()
 
-    def AddSubInterface(self):
+        # 在其他线程调用时self.raise_()没有用
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.show()
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, False)
+        self.show()
+
+        self.setFocus()
+
+    def add_interfaces(self) -> None:
         self.chouqian1 = chouqian1(self)
         self.chouqian2 = chouqian2(self)
         self.statistics = statistics(self)
@@ -101,7 +109,11 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.settings, FluentIcon.SETTING, '设置', position=NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.about, FluentIcon.INFO, '关于', position=NavigationItemPosition.BOTTOM)
 
-    def init_input(self):
+        QScroller.grabGesture(self.statistics.TableWidget.viewport(), QScroller.LeftMouseButtonGesture)
+        QScroller.grabGesture(self.chouqian1.ScrollArea.viewport(), QScroller.LeftMouseButtonGesture)
+        QScroller.grabGesture(self.chouqian2.ScrollArea.viewport(), QScroller.LeftMouseButtonGesture)
+
+    def init_input(self) -> None:
         self.settings.SwitchButton.setChecked(data.cfg["draw_animation"])  # 抽签动画
         self.settings.SwitchButton_2.setChecked(data.cfg["reduce_duplication"])  # 减少重复
         self.settings.SpinBox.setValue(data.cfg["groups_count"])  # 组的数量
@@ -123,7 +135,7 @@ class MainWindow(MSFluentWindow):
         if data.cfg["default_list"]:
             self.statistics.ComboBox.setCurrentIndex(data.list_names.index(data.cfg["default_list"]))
 
-    def Connect_signals_and_slot_functions(self):
+    def connect_signals(self) -> None:
         self.stackedWidget.currentChanged.connect(self.change_sub_interface)  # 检查界面切换
         self.settings.PushButton.clicked.connect(load_config)
         self.settings.SwitchButton.checkedChanged.connect(lambda: data.write_settings("draw_animation", self.settings.SwitchButton.indicator.isChecked()))  # 抽签动画
@@ -151,7 +163,7 @@ class MainWindow(MSFluentWindow):
         self.about.PrimaryPushButton_2.clicked.connect(lambda: self.check_update(False))
         self.about.PrimaryPushButton_3.clicked.connect(lambda: QDesktopServices.openUrl(QUrl('https://github.com/chenmozhijin/chouqian/issues')))
 
-    def init_chouqian(self):
+    def init_chouqian(self) -> None:
         list_name = self.chouqian1.ComboBox.currentText()
         list_data = data.read_list(list_name)
         list_count = len(list_data)
@@ -169,13 +181,13 @@ class MainWindow(MSFluentWindow):
         self.chouqian2.chouqian_textEdit.setFont(font)
 
     @Slot()
-    def change_groups_count(self):
+    def change_groups_count(self) -> None:
         data.write_settings("groups_count", int(self.settings.SpinBox.text()))
         data.del_group_record()
         self.chouqian2.Slider.setMaximum(data.cfg["groups_count"])
 
     @Slot()
-    def change_date(self, type_):
+    def change_date(self, type_: str) -> None:
         start_time = self.statistics.CalendarPicker.getDate()
         end_time = self.statistics.CalendarPicker_2.getDate()
         start_timestamp = qdate_to_unix_timestamp(start_time)
@@ -187,7 +199,7 @@ class MainWindow(MSFluentWindow):
         self.SetUpStatisticsTable()
 
     @Slot()
-    def resetdate(self):
+    def resetdate(self) -> None:
         date = QDate()
         cp1 = self.statistics.CalendarPicker
         cp2 = self.statistics.CalendarPicker_2
@@ -198,13 +210,23 @@ class MainWindow(MSFluentWindow):
             cp.setStyle(QApplication.style())
             cp.update()
 
+    @staticmethod
+    def sleep(duration: float) -> None:
+        QApplication.processEvents()
+        if duration <= 0:
+            return
+
+        start = time.time()
+        while time.time() - start < duration:
+            QApplication.processEvents()
+
     @Slot()
-    def chouqian_start(self, type_):
+    def chouqian_start(self, type_: str) -> None:
         if type_ == 1:
             if self.chouqian1_in_progress:
                 return
             self.chouqian1_in_progress = True
-            chouqian_TextEdit = self.chouqian1.chouqian_textEdit
+            chouqian_text_edit = self.chouqian1.chouqian_textEdit
             chouqian_count = self.chouqian1.Slider.value()
             list_name = self.chouqian1.ComboBox.currentText()
             list_data = data.read_list(list_name)
@@ -213,7 +235,7 @@ class MainWindow(MSFluentWindow):
             if self.chouqian2_in_progress:
                 return
             self.chouqian2_in_progress = True
-            chouqian_TextEdit = self.chouqian2.chouqian_textEdit
+            chouqian_text_edit = self.chouqian2.chouqian_textEdit
             chouqian_count = self.chouqian2.Slider.value()
             list_name = "小组抽签"
             list_data = []
@@ -235,7 +257,7 @@ class MainWindow(MSFluentWindow):
                         if new_result not in last_records and new_result not in chouqian_results[:index] + chouqian_results[index + 1:]:
                             chouqian_results[index] = new_result
                             break
-        chouqian_TextEdit.setPlainText("")
+        chouqian_text_edit.setPlainText("")
         if self.settings.SwitchButton.indicator.isChecked():  # 抽签动画
             if chouqian_count == 1:
                 animation_count = 5
@@ -266,7 +288,7 @@ class MainWindow(MSFluentWindow):
                 animation_count = list_count
 
             def del_text(n: int) -> None:
-                cursor = chouqian_TextEdit.textCursor()
+                cursor = chouqian_text_edit.textCursor()
                 cursor.movePosition(QTextCursor.End)
                 cursor.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, n)
                 cursor.removeSelectedText()
@@ -276,16 +298,14 @@ class MainWindow(MSFluentWindow):
             for chouqian_result in chouqian_results:
                 for _i in range(animation_count):
                     animation_text = space + random.choice(list_data)  # noqa: S311
-                    chouqian_TextEdit.insertPlainText(animation_text)
-                    QApplication.processEvents()
+                    chouqian_text_edit.insertPlainText(animation_text)
+                    self.sleep(sleeptime)
                     del_text(len(animation_text))
-                    time.sleep(sleeptime)
-                chouqian_TextEdit.insertPlainText(space + chouqian_result)
-                QApplication.processEvents()
-                time.sleep(sleeptime)
+                chouqian_text_edit.insertPlainText(space + chouqian_result)
+                self.sleep(sleeptime)
                 space = " "
         else:
-            chouqian_TextEdit.setPlainText(" ".join(chouqian_results))
+            chouqian_text_edit.setPlainText(" ".join(chouqian_results))
         for chouqian_result in chouqian_results:
             data.write_record(list_name, chouqian_result, int(time.time()))
 
@@ -308,9 +328,9 @@ class MainWindow(MSFluentWindow):
         table.setRowCount(len(statistics_data))
         table.setColumnCount(4)
         table.setHorizontalHeaderLabels(['名称', '次数', '爆率', '上次被抽到的时间'])
-        row, total = 0, 0
+        total = 0
         total = sum(value[1]['count'] for value in statistics_data)
-        for key, value in statistics_data:
+        for row, (key, value) in enumerate(statistics_data):
             # key 为人名 value["count"] 为次数 value["last_time"]为时间
             if value["last_time"]:
                 last_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(value["last_time"] - local_timezone_offset))
@@ -322,11 +342,10 @@ class MainWindow(MSFluentWindow):
             table.setItem(row, 1, QTableWidgetItem(str(value["count"])))
             table.setItem(row, 2, QTableWidgetItem(str(rate) + "%"))
             table.setItem(row, 3, QTableWidgetItem(last_time))
-            row += 1
         table.resizeColumnsToContents()
 
     @Slot()
-    def change_chouqian_count(self, input_, Interface):
+    def change_chouqian_count(self, input_, Interface) -> None:
         if input_ == "Slider":
             Interface.CaptionLabel.setText(str(Interface.Slider.value()))
         elif input_ == "+":
@@ -337,12 +356,12 @@ class MainWindow(MSFluentWindow):
             Interface.CaptionLabel.setText(str(Interface.Slider.value()))
 
     @Slot()
-    def change_sub_interface(self):
+    def change_sub_interface(self) -> None:
         interface = self.stackedWidget.currentWidget().objectName()
         if interface == "statistics":
             self.SetUpStatisticsTable()
 
-    def createInfoBar(self, type_, title, content, duration) -> None:
+    def createInfoBar(self, type_: str, title: str, content: str, duration: int) -> None:
         if type_ == "error":
             infobar = InfoBar.error
         elif type_ == "success":
@@ -358,14 +377,14 @@ class MainWindow(MSFluentWindow):
             isClosable=True,
             position=InfoBarPosition.TOP_RIGHT,
             duration=duration,
-            parent=self
+            parent=self,
         )
 
-    def check_update(self, IsAuto) -> None:
+    def check_update(self, is_auto: bool) -> None:
         if not self.checkupdate_in_progress:
             self.checkupdate_in_progress = True
             # 为更新检查创建一个新的工作实例
-            self.update_checker = UpdateChecker(github_repo="chenmozhijin/chouqian", IsAuto=IsAuto)
+            self.update_checker = UpdateChecker(github_repo="chenmozhijin/chouqian", IsAuto=is_auto)
             self.update_checker_thread = QThread()
             self.update_checker.update_finished.connect(self.handle_check_update_result)
             self.update_checker_thread.started.connect(self.update_checker.run_update)
@@ -374,7 +393,7 @@ class MainWindow(MSFluentWindow):
             # 启动检查更新线程
             self.update_checker_thread.start()
 
-    def handle_check_update_result(self, success, latest_version, IsAuto) -> None:
+    def handle_check_update_result(self, success: bool, latest_version: str, is_auto: bool) -> None:
         self.update_checker_thread.quit()
         if success:
             if latest_version != __version__:
@@ -388,19 +407,19 @@ class MainWindow(MSFluentWindow):
                     duration=5000,
                     parent=self,
                 )
-                Button = PushButton(MW.tr('前往更新'))
-                Button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://github.com/{self.update_checker.github_repo}/releases/latest")))
-                infobar.addWidget(Button)
+                button = PushButton(MW.tr('前往更新'))
+                button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://github.com/{self.update_checker.github_repo}/releases/latest")))
+                infobar.addWidget(button)
                 infobar.show()
-            elif not IsAuto:
+            elif not is_auto:
                 self.createInfoBar("info", "当前已是最新版本", "", 5000)
-        elif not IsAuto:
+        elif not is_auto:
             self.createInfoBar("error", "检查更新失败", latest_version, 5000)
         self.checkupdate_in_progress = False
 
 
 class FloatingWindow(QWidget):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         screen_geometry = QGuiApplication.primaryScreen().availableGeometry()
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -414,7 +433,7 @@ class FloatingWindow(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)  # 去除布局的外边距
         self.label = QLabel("抽", self)
         self.label.setAlignment(Qt.AlignCenter)
-        self.label.setStyleSheet("background-color: rgba(0, 0, 0, 0);")  # 设置标签背景颜色为透明
+        self.label.setStyleSheet("QLabel{background-color: rgba(0, 0, 0, 0);color: black;}")  # 设置标签背景颜色为透明
         layout.addWidget(self.label)
         self.setLayout(layout)
 
@@ -472,7 +491,7 @@ class TrayIcon(QSystemTrayIcon):
         self.show()
 
 
-def qdate_to_unix_timestamp(qdate):
+def qdate_to_unix_timestamp(qdate: QDate):  # noqa: ANN201
     qdatetime = QDateTime(qdate, QTime(0, 0), Qt.UTC)
     return qdatetime.toSecsSinceEpoch()
 
@@ -557,7 +576,7 @@ class UpdateChecker(QObject):
 class HandleInstanceRepeatedRuns(QObject):
     AnotherInstanceStarts = Signal()
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.shared_memory = QSharedMemory(self)
         self.shared_memory.setKey("chenmozhijinChouQianAppKey")
@@ -566,22 +585,19 @@ class HandleInstanceRepeatedRuns(QObject):
         self.local_server.newConnection.connect(self.handleNewConnection)
 
         if self.isRunning():
-            self.sendSignal()
+            self.send_signal()
             sys.exit(0)
         else:
-            self.startLocalServer()
+            self.local_server.listen("chenmozhijinChouQianAppLocalServer")
 
-    def isRunning(self):
+    def isRunning(self) -> bool:
         if self.shared_memory.attach():
             return True
         if not self.shared_memory.create(1):
             return True
         return False
 
-    def startLocalServer(self):
-        self.local_server.listen("chenmozhijinChouQianAppLocalServer")
-
-    def sendSignal(self):
+    def send_signal(self) -> None:
         socket = QLocalSocket(self)
         socket.connectToServer("chenmozhijinChouQianAppLocalServer")
         if socket.waitForConnected(1000):
@@ -589,13 +605,13 @@ class HandleInstanceRepeatedRuns(QObject):
             socket.waitForBytesWritten(1000)
             socket.disconnectFromServer()
 
-    def handleNewConnection(self):
+    def handleNewConnection(self) -> None:
         socket = self.local_server.nextPendingConnection()
         if socket:
             socket.readyRead.connect(self.handleReadyRead)
             socket.disconnected.connect(socket.deleteLater)
 
-    def handleReadyRead(self):
+    def handleReadyRead(self) -> None:
         socket = self.sender()
         if socket.bytesAvailable():
             data = socket.readAll()
@@ -604,7 +620,7 @@ class HandleInstanceRepeatedRuns(QObject):
                 print("Received activation signal.")
 
 
-def exit_program():
+def exit_program() -> None:
     if HandleInstanceRepeatedRunsThread.isRunning():
         HandleInstanceRepeatedRunsThread.quit()
     if MW.update_checker_thread.isRunning():
@@ -628,13 +644,13 @@ if __name__ == "__main__":
 
     MW.show()
     QApplication.processEvents()
-    MW.AddSubInterface()
+    MW.add_interfaces()
     current_directory = os.path.dirname(os.path.abspath(__file__))
     data = Data(current_directory)
     SystemRandom = random.SystemRandom()
     MW.init_input()
     MW.init_chouqian()
-    MW.Connect_signals_and_slot_functions()
+    MW.connect_signals()
     MW.about.BodyLabel_2.setText('版本：' + __version__)
     floating_window = FloatingWindow()
     floating_window.show()

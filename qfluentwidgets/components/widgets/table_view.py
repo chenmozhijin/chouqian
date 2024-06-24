@@ -130,7 +130,11 @@ class TableItemDelegate(QStyledItemDelegate):
             else:
                 alpha = 17
 
-        painter.setBrush(QColor(c, c, c, alpha))
+        if index.data(Qt.ItemDataRole.BackgroundRole):
+            painter.setBrush(index.data(Qt.ItemDataRole.BackgroundRole))
+        else:
+            painter.setBrush(QColor(c, c, c, alpha))
+
         self._drawBackground(painter, option, index)
 
         # draw indicator
@@ -191,14 +195,11 @@ class TableBase:
         self.setSelectionBehavior(TableWidget.SelectRows)
         self.horizontalHeader().setHighlightSections(False)
         self.verticalHeader().setHighlightSections(False)
+        self.verticalHeader().setDefaultSectionSize(38)
 
         self.entered.connect(lambda i: self._setHoverRow(i.row()))
         self.pressed.connect(lambda i: self._setPressedRow(i.row()))
         self.verticalHeader().sectionClicked.connect(self.selectRow)
-
-    def showEvent(self, e):
-        QTableView.showEvent(self, e)
-        self.resizeRowsToContents()
 
     def setBorderVisible(self, isVisible: bool):
         """ set the visibility of border """

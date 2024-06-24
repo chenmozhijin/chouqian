@@ -260,7 +260,7 @@ class CompleterMenu(RoundMenu):
         hd = self.view.heightForAnimation(pd, MenuAnimationType.FADE_IN_DROP_DOWN)
 
         pu = p.mapToGlobal(QPoint(x, 7))
-        hu = self.view.heightForAnimation(pd, MenuAnimationType.FADE_IN_PULL_UP)
+        hu = self.view.heightForAnimation(pu, MenuAnimationType.FADE_IN_PULL_UP)
 
         if hd >= hu:
             pos = pd
@@ -426,5 +426,12 @@ class PasswordLineEdit(LineEdit):
             self.setPasswordVisible(False)
 
         return super().eventFilter(obj, e)
+
+    def inputMethodQuery(self, query: Qt.InputMethodQuery):
+        # Disable IME for PasswordLineEdit
+        if query == Qt.InputMethodQuery.ImEnabled:
+            return False
+        else:
+            return super().inputMethodQuery(query)
 
     passwordVisible = Property(bool, isPasswordVisible, setPasswordVisible)

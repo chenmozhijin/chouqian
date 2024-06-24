@@ -4,7 +4,7 @@ from string import Template
 from typing import List, Union
 import weakref
 
-from PySide6.QtCore import QFile, QObject, QEvent
+from PySide6.QtCore import QFile, QObject, QEvent, QDynamicPropertyChangeEvent
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget
 
@@ -39,6 +39,7 @@ class StyleSheetManager(QObject):
         if widget not in self.widgets:
             widget.destroyed.connect(self.deregister)
             widget.installEventFilter(CustomStyleSheetWatcher(widget))
+            widget.installEventFilter(DirtyStyleSheetWatcher(widget))
             self.widgets[widget] = StyleSheetCompose([source, CustomStyleSheet(widget)])
 
         if not reset:
@@ -211,9 +212,23 @@ class CustomStyleSheetWatcher(QObject):
         if e.type() != QEvent.DynamicPropertyChange:
             return super().eventFilter(obj, e)
 
-        name = e.propertyName().data().decode()
+        name = QDynamicPropertyChangeEvent(e).propertyName().data().decode()
         if name in [CustomStyleSheet.LIGHT_QSS_KEY, CustomStyleSheet.DARK_QSS_KEY]:
             addStyleSheet(obj, CustomStyleSheet(obj))
+
+        return super().eventFilter(obj, e)
+
+
+class DirtyStyleSheetWatcher(QObject):
+    """ Dirty style sheet watcher """
+
+    def eventFilter(self, obj: QWidget, e: QEvent):
+        if e.type() != QEvent.Type.Paint or not obj.property('dirty-qss'):
+            return super().eventFilter(obj, e)
+
+        obj.setProperty('dirty-qss', False)
+        if obj in styleSheetManager.widgets:
+            obj.setStyleSheet(getStyleSheet(styleSheetManager.source(obj)))
 
         return super().eventFilter(obj, e)
 
@@ -344,12 +359,22 @@ def addStyleSheet(widget: QWidget, source: Union[str, StyleSheetBase], theme=The
         widget.setStyleSheet(qss)
 
 
-def updateStyleSheet():
-    """ update the style sheet of all fluent widgets """
+def updateStyleSheet(lazy=False):
+    """ update the style sheet of all fluent widgets
+
+    Parameters
+    ----------
+    lazy: bool
+        whether to update the style sheet lazily, set to `True` will accelerate theme switching
+    """
     removes = []
     for widget, file in styleSheetManager.items():
         try:
-            setStyleSheet(widget, file, qconfig.theme)
+            if not (lazy and widget.visibleRegion().isNull()):
+                setStyleSheet(widget, file, qconfig.theme)
+            else:
+                styleSheetManager.register(file, widget)
+                widget.setProperty('dirty-qss', True)
         except RuntimeError:
             removes.append(widget)
 
@@ -357,7 +382,7 @@ def updateStyleSheet():
         styleSheetManager.deregister(widget)
 
 
-def setTheme(theme: Theme, save=False):
+def setTheme(theme: Theme, save=False, lazy=False):
     """ set the theme of application
 
     Parameters
@@ -367,22 +392,28 @@ def setTheme(theme: Theme, save=False):
 
     save: bool
         whether to save the change to config file
+
+    lazy: bool
+        whether to update the style sheet lazily, set to `True` will accelerate theme switching
     """
     qconfig.set(qconfig.themeMode, theme, save)
-    updateStyleSheet()
+    updateStyleSheet(lazy)
     qconfig.themeChangedFinished.emit()
 
 
-def toggleTheme(save=False):
+def toggleTheme(save=False, lazy=False):
     """ toggle the theme of application
 
     Parameters
     ----------
     save: bool
         whether to save the change to config file
+
+    lazy: bool
+        whether to update the style sheet lazily, set to `True` will accelerate theme switching
     """
     theme = Theme.LIGHT if isDarkTheme() else Theme.DARK
-    setTheme(theme, save)
+    setTheme(theme, save, lazy)
 
 
 class ThemeColor(Enum):
@@ -400,7 +431,7 @@ class ThemeColor(Enum):
         return self.color().name()
 
     def color(self):
-        color = qconfig.get(qconfig.themeColor)  # type:QColor
+        color = qconfig.get(qconfig._cfg.themeColor)  # type:QColor
 
         # transform color into hsv space
         h, s, v, _ = color.getHsvF()
@@ -448,7 +479,7 @@ def themeColor():
     return ThemeColor.PRIMARY.color()
 
 
-def setThemeColor(color, save=False):
+def setThemeColor(color, save=False, lazy=False):
     """ set theme color
 
     Parameters
@@ -458,7 +489,10 @@ def setThemeColor(color, save=False):
 
     save: bool
         whether to save to change to config file
+
+    lazy: bool
+        whether to update the style sheet lazily
     """
     color = QColor(color)
     qconfig.set(qconfig.themeColor, color, save=save)
-    updateStyleSheet()
+    updateStyleSheet(lazy)

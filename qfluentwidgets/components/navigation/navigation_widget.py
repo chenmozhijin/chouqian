@@ -2,7 +2,7 @@
 from typing import Union, List
 
 from PySide6.QtCore import (Qt, Signal, QRect, QRectF, QPropertyAnimation, Property, QMargins,
-                          QEasingCurve, QPoint, QEvent, QSize)
+                          QEasingCurve, QPoint, QEvent)
 from PySide6.QtGui import QColor, QPainter, QPen, QIcon, QCursor, QFont, QBrush, QPixmap, QImage
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from collections import deque
@@ -32,6 +32,11 @@ class NavigationWidget(QWidget):
         self.isSelectable = isSelectable
         self.treeParent = None
         self.nodeDepth = 0
+
+        # text color
+        self.lightTextColor = QColor(0, 0, 0)
+        self.darkTextColor = QColor(255, 255, 255)
+
         self.setFixedSize(40, 36)
 
     def enterEvent(self, e):
@@ -84,6 +89,24 @@ class NavigationWidget(QWidget):
         self.isSelected = isSelected
         self.update()
         self.selectedChanged.emit(isSelected)
+
+    def textColor(self):
+        return self.darkTextColor if isDarkTheme() else self.lightTextColor
+
+    def setLightTextColor(self, color):
+        """ set the text color in light theme mode """
+        self.lightTextColor = QColor(color)
+        self.update()
+
+    def setDarkTextColor(self, color):
+        """ set the text color in dark theme mode """
+        self.darkTextColor = QColor(color)
+        self.update()
+
+    def setTextColor(self, light, dark):
+        """ set the text color in light/dark theme mode """
+        self.setLightTextColor(light)
+        self.setDarkTextColor(dark)
 
 
 class NavigationPushButton(NavigationWidget):
@@ -161,7 +184,7 @@ class NavigationPushButton(NavigationWidget):
             return
 
         painter.setFont(self.font())
-        painter.setPen(QColor(c, c, c))
+        painter.setPen(self.textColor())
 
         left = 44 + pl if not self.icon().isNull() else pl + 16
         painter.drawText(QRectF(left, 0, self.width()-13-left-pr, self.height()), Qt.AlignVCenter, self.text())
@@ -349,6 +372,7 @@ class NavigationTreeWidget(NavigationTreeWidgetBase):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.expandAni.valueChanged.connect(lambda g: self.setFixedSize(g.size()))
         self.expandAni.valueChanged.connect(self.expanded)
+        self.expandAni.finished.connect(self.parentWidget().layout().invalidate)
 
     def addChild(self, child):
         self.insertChild(-1, child)
@@ -364,6 +388,21 @@ class NavigationTreeWidget(NavigationTreeWidgetBase):
 
     def setIcon(self, icon: Union[str, QIcon, FIF]):
         self.itemWidget.setIcon(icon)
+
+    def textColor(self):
+        return self.itemWidget.textColor()
+
+    def setLightTextColor(self, color):
+        """ set the text color in light theme mode """
+        self.itemWidget.setLightTextColor(color)
+
+    def setDarkTextColor(self, color):
+        """ set the text color in dark theme mode """
+        self.itemWidget.setDarkTextColor(color)
+
+    def setTextColor(self, light, dark):
+        """ set the text color in light/dark theme mode """
+        self.itemWidget.setTextColor(light, dark)
 
     def setFont(self, font: QFont):
         super().setFont(font)
@@ -513,7 +552,7 @@ class NavigationAvatarWidget(NavigationWidget):
         painter.translate(-8, -6)
 
         if not self.isCompacted:
-            painter.setPen(Qt.white if isDarkTheme() else Qt.black)
+            painter.setPen(self.textColor())
             painter.setFont(self.font())
             painter.drawText(QRect(44, 0, 255, 36), Qt.AlignVCenter, self.name)
 
