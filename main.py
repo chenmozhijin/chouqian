@@ -124,8 +124,10 @@ class MainWindow(MSFluentWindow):
         self.settings.SpinBox.setValue(data.cfg["groups_count"])  # 组的数量
         self.settings.SpinBox.setMinimum(1)
 
+        default_list = data.cfg["default_list"]
         self.settings.ComboBox.clear()
         self.settings.ComboBox.addItems(data.list_names)
+        data.cfg["default_list"] = default_list
         if data.cfg["default_list"]:
             self.settings.ComboBox.setCurrentIndex(data.list_names.index(data.cfg["default_list"]))
 

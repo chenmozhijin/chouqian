@@ -8,7 +8,7 @@
 ################################################################################
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QCursor, QFont
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -87,6 +87,7 @@ class Ui_chouqian1:
         sizePolicy3.setHeightForWidth(self.chouqian_textEdit.sizePolicy().hasHeightForWidth())
         self.chouqian_textEdit.setSizePolicy(sizePolicy3)
         self.chouqian_textEdit.setMinimumSize(QSize(0, 0))
+        self.chouqian_textEdit.viewport().setProperty("cursor", QCursor(Qt.ArrowCursor))
         self.chouqian_textEdit.setFrameShape(QFrame.Shape.NoFrame)
         self.chouqian_textEdit.setFrameShadow(QFrame.Shadow.Plain)
         self.chouqian_textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)

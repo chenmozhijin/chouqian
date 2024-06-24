@@ -19,6 +19,9 @@ class TextLineEdit(QTextEdit):
             -verticalMargin, self.topMarginCorrection, 0, 0,
         )  # left, top, right, bottom
         # Set up document with appropriate margins and font
+        # 设置光标为指针
+        
+
         self.document = QTextDocument()
         current_font = self.currentFont()
         current_font.setPointSize(fontSize)
@@ -36,6 +39,7 @@ class TextLineEdit(QTextEdit):
                                 text-align: center;
                                 color: black;
                             }""")
+        self.setCursor(Qt.ArrowCursor)
 
     def insertPlainText(self, text: str) -> None:
         super().insertPlainText(text)
